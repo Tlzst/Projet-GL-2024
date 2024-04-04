@@ -39,6 +39,8 @@ public abstract class ServiceAddressURL extends URL {
     private transient Map<String, String> concatenatedPrams;
     //    private transient Map<String, String> allParameters;
 
+
+    private Map<String,String> parametersKeysAndGetters;
     public ServiceAddressURL(
             String protocol,
             String username,
@@ -55,6 +57,8 @@ public abstract class ServiceAddressURL extends URL {
     public ServiceAddressURL(URLAddress urlAddress, URLParam urlParam, URL consumerURL) {
         super(urlAddress, urlParam);
         this.consumerURL = consumerURL;
+        parametersKeysAndGetters = new HashMap<>();
+        initParametersMap();
     }
 
     @Override
@@ -94,38 +98,19 @@ public abstract class ServiceAddressURL extends URL {
     @Override
     public String getOriginalParameter(String key) {
         // call corresponding methods directly, then we can remove the following if branches.
-        if (GROUP_KEY.equals(key)) {
-            return getGroup();
-        } else if (VERSION_KEY.equals(key)) {
-            return getVersion();
-        } else if (APPLICATION_KEY.equals(key)) {
-            return getRemoteApplication();
-        } else if (SIDE_KEY.equals(key)) {
-            return getSide();
-        } else if (CATEGORY_KEY.equals(key)) {
-            return getCategory();
-        }
-        return super.getParameter(key);
+        String value = parametersKeysAndGetters.get(key);
+        return value == null ? super.getParameter(key) : value ;
     }
 
     @Override
     public String getParameter(String key) {
         // call corresponding methods directly, then we can remove the following if branches.
-        if (GROUP_KEY.equals(key)) {
-            return getGroup();
-        } else if (VERSION_KEY.equals(key)) {
-            return getVersion();
-        } else if (APPLICATION_KEY.equals(key)) {
-            return getRemoteApplication();
-        } else if (SIDE_KEY.equals(key)) {
-            return getSide();
-        } else if (CATEGORY_KEY.equals(key)) {
-            return getCategory();
-        }
-        String value = null;
-        if (consumerURL != null) {
+        String value = parametersKeysAndGetters.get(key);
+
+        if (value == null && consumerURL != null) {
             value = consumerURL.getParameter(key);
         }
+
         if (StringUtils.isEmpty(value)) {
             value = super.getParameter(key);
         }
@@ -250,5 +235,13 @@ public abstract class ServiceAddressURL extends URL {
     public String toString() {
         URLParam totalParam = getUrlParam().addParametersIfAbsent(consumerURL.getParameters());
         return new ServiceConfigURL(getUrlAddress(), totalParam, null).toString();
+    }
+
+    private void initParametersMap(){
+        parametersKeysAndGetters.put(GROUP_KEY,this.getGroup());
+        parametersKeysAndGetters.put(VERSION_KEY,this.getVersion());
+        parametersKeysAndGetters.put(APPLICATION_KEY,this.getRemoteApplication());
+        parametersKeysAndGetters.put(SIDE_KEY,this.getSide());
+        parametersKeysAndGetters.put(CATEGORY_KEY,this.getCategory());
     }
 }

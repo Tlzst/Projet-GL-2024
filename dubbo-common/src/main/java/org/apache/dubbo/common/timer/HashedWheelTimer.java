@@ -124,6 +124,8 @@ public class HashedWheelTimer implements Timer {
 
     private volatile long startTime;
 
+    private static final boolean IS_OS_WINDOWS = System.getProperty(OS_NAME_KEY, "").toLowerCase(Locale.US).contains(OS_WIN_PREFIX);
+
     /**
      * Creates a new timer with the default thread factory
      * ({@link Executors#defaultThreadFactory()}), default tick duration, and
@@ -266,46 +268,6 @@ public class HashedWheelTimer implements Timer {
         }
     }
 
-    @Override
-    protected void finalize() throws Throwable {
-        try {
-            super.finalize();
-        } finally {
-            // This object is going to be GCed and it is assumed the ship has sailed to do a proper shutdown. If
-            // we have not yet shutdown then we want to make sure we decrement the active instance count.
-            if (WORKER_STATE_UPDATER.getAndSet(this, WORKER_STATE_SHUTDOWN) != WORKER_STATE_SHUTDOWN) {
-                INSTANCE_COUNTER.decrementAndGet();
-            }
-        }
-    }
-
-    private static HashedWheelBucket[] createWheel(int ticksPerWheel) {
-        if (ticksPerWheel <= 0) {
-            throw new IllegalArgumentException(
-                "ticksPerWheel must be greater than 0: " + ticksPerWheel);
-        }
-        if (ticksPerWheel > MAX_TICKS_PER_WHEEL) {
-            throw new IllegalArgumentException(
-                "ticksPerWheel may not be greater than 2^30: " + ticksPerWheel);
-        }
-
-        ticksPerWheel = normalizeTicksPerWheel(ticksPerWheel);
-        HashedWheelBucket[] wheel = new HashedWheelBucket[ticksPerWheel];
-        for (int i = 0; i < wheel.length; i++) {
-            wheel[i] = new HashedWheelBucket();
-        }
-        return wheel;
-    }
-
-    private static int normalizeTicksPerWheel(int ticksPerWheel) {
-        int normalizedTicksPerWheel = ticksPerWheel - 1;
-        normalizedTicksPerWheel |= normalizedTicksPerWheel >>> 1;
-        normalizedTicksPerWheel |= normalizedTicksPerWheel >>> 2;
-        normalizedTicksPerWheel |= normalizedTicksPerWheel >>> 4;
-        normalizedTicksPerWheel |= normalizedTicksPerWheel >>> 8;
-        normalizedTicksPerWheel |= normalizedTicksPerWheel >>> 16;
-        return normalizedTicksPerWheel + 1;
-    }
 
     /**
      * Starts the background thread explicitly.  The background thread will
@@ -422,11 +384,60 @@ public class HashedWheelTimer implements Timer {
         return pendingTimeouts.get();
     }
 
+
+    @Override
+    protected void finalize() throws Throwable {
+        try {
+            super.finalize();
+        } finally {
+            // This object is going to be GCed and it is assumed the ship has sailed to do a proper shutdown. If
+            // we have not yet shutdown then we want to make sure we decrement the active instance count.
+            if (WORKER_STATE_UPDATER.getAndSet(this, WORKER_STATE_SHUTDOWN) != WORKER_STATE_SHUTDOWN) {
+                INSTANCE_COUNTER.decrementAndGet();
+            }
+        }
+    }
+
+    private static HashedWheelBucket[] createWheel(int ticksPerWheel) {
+        if (ticksPerWheel <= 0) {
+            throw new IllegalArgumentException(
+                    "ticksPerWheel must be greater than 0: " + ticksPerWheel);
+        }
+        if (ticksPerWheel > MAX_TICKS_PER_WHEEL) {
+            throw new IllegalArgumentException(
+                    "ticksPerWheel may not be greater than 2^30: " + ticksPerWheel);
+        }
+
+        ticksPerWheel = normalizeTicksPerWheel(ticksPerWheel);
+        HashedWheelBucket[] wheel = new HashedWheelBucket[ticksPerWheel];
+        for (int i = 0; i < wheel.length; i++) {
+            wheel[i] = new HashedWheelBucket();
+        }
+        return wheel;
+    }
+
+    private static int normalizeTicksPerWheel(int ticksPerWheel) {
+        int normalizedTicksPerWheel = ticksPerWheel - 1;
+        normalizedTicksPerWheel |= normalizedTicksPerWheel >>> 1;
+        normalizedTicksPerWheel |= normalizedTicksPerWheel >>> 2;
+        normalizedTicksPerWheel |= normalizedTicksPerWheel >>> 4;
+        normalizedTicksPerWheel |= normalizedTicksPerWheel >>> 8;
+        normalizedTicksPerWheel |= normalizedTicksPerWheel >>> 16;
+        return normalizedTicksPerWheel + 1;
+    }
+
     private static void reportTooManyInstances() {
         String resourceType = ClassUtils.simpleClassName(HashedWheelTimer.class);
         logger.error(COMMON_ERROR_TOO_MANY_INSTANCES, "", "", "You are creating too many " + resourceType + " instances. " +
             resourceType + " is a shared resource that must be reused across the JVM, " +
             "so that only a few instances are created.");
+    }
+
+
+
+
+    private boolean isWindows() {
+        return IS_OS_WINDOWS;
     }
 
     private final class Worker implements Runnable {
@@ -814,9 +825,4 @@ public class HashedWheelTimer implements Timer {
         }
     }
 
-    private static final boolean IS_OS_WINDOWS = System.getProperty(OS_NAME_KEY, "").toLowerCase(Locale.US).contains(OS_WIN_PREFIX);
-
-    private boolean isWindows() {
-        return IS_OS_WINDOWS;
-    }
 }

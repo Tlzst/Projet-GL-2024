@@ -96,6 +96,9 @@ public class HashedWheelTimer implements Timer {
     private static final int INSTANCE_COUNT_LIMIT = 64;
     private static final AtomicIntegerFieldUpdater<HashedWheelTimer> WORKER_STATE_UPDATER =
         AtomicIntegerFieldUpdater.newUpdater(HashedWheelTimer.class, "workerState");
+    private static final int MAX_TICKS_PER_WHEEL = 1073741824;
+    private static final int DEFAULT_NUMBER_TICKS_PER_WHEEL = 512;
+    private static final int MAX_TIMEOUTS = 100000;
 
     private final Worker worker = new Worker();
     private final Thread workerThread;
@@ -184,7 +187,7 @@ public class HashedWheelTimer implements Timer {
      */
     public HashedWheelTimer(
         ThreadFactory threadFactory, long tickDuration, TimeUnit unit) {
-        this(threadFactory, tickDuration, unit, 512);
+        this(threadFactory, tickDuration, unit, DEFAULT_NUMBER_TICKS_PER_WHEEL);
     }
 
     /**
@@ -281,7 +284,7 @@ public class HashedWheelTimer implements Timer {
             throw new IllegalArgumentException(
                 "ticksPerWheel must be greater than 0: " + ticksPerWheel);
         }
-        if (ticksPerWheel > 1073741824) {
+        if (ticksPerWheel > MAX_TICKS_PER_WHEEL) {
             throw new IllegalArgumentException(
                 "ticksPerWheel may not be greater than 2^30: " + ticksPerWheel);
         }
@@ -475,7 +478,7 @@ public class HashedWheelTimer implements Timer {
         private void transferTimeoutsToBuckets() {
             // transfer only max. 100000 timeouts per tick to prevent a thread to stale the workerThread when it just
             // adds new timeouts in a loop.
-            for (int i = 0; i < 100000; i++) {
+            for (int i = 0; i < MAX_TIMEOUTS; i++) {
                 HashedWheelTimeout timeout = timeouts.poll();
                 if (timeout == null) {
                     // all processed

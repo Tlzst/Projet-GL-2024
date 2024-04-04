@@ -21,6 +21,7 @@ import org.apache.dubbo.common.threadlocal.NamedInternalThreadFactory;
 import org.apache.dubbo.common.threadpool.MemorySafeLinkedBlockingQueue;
 import org.apache.dubbo.common.threadpool.ThreadPool;
 import org.apache.dubbo.common.threadpool.support.AbortPolicyWithReport;
+import org.apache.dubbo.common.threadpool.support.AbstractThreadPool;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
@@ -41,32 +42,15 @@ import static org.apache.dubbo.common.constants.CommonConstants.THREAD_NAME_KEY;
  *
  * @see java.util.concurrent.Executors#newFixedThreadPool(int)
  */
-public class FixedThreadPool implements ThreadPool {
+public class FixedThreadPool extends AbstractThreadPool implements ThreadPool {
 
     @Override
     public Executor getExecutor(URL url) {
-        String name =
-                url.getParameter(THREAD_NAME_KEY, (String) url.getAttribute(THREAD_NAME_KEY, DEFAULT_THREAD_NAME));
-        int threads = url.getParameter(THREADS_KEY, DEFAULT_THREADS);
-        int queues = url.getParameter(QUEUES_KEY, DEFAULT_QUEUES);
+       return createExecutor(url);
+    }
 
-        BlockingQueue<Runnable> blockingQueue;
-
-        if (queues == 0) {
-            blockingQueue = new SynchronousQueue<>();
-        } else if (queues < 0) {
-            blockingQueue = new MemorySafeLinkedBlockingQueue<>();
-        } else {
-            blockingQueue = new LinkedBlockingQueue<>(queues);
-        }
-
-        return new ThreadPoolExecutor(
-                threads,
-                threads,
-                0,
-                TimeUnit.MILLISECONDS,
-                blockingQueue,
-                new NamedInternalThreadFactory(name, true),
-                new AbortPolicyWithReport(name, url));
+    @Override
+    protected int getFirstParameter(URL url) {
+        return url.getParameter(THREADS_KEY, DEFAULT_THREADS);
     }
 }

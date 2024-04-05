@@ -25,10 +25,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ExtensionLoader_Activate_Test {
+public class ExtensionLoaderActivateTest {
 
     @Test
-    void test_onClass() throws Exception {
+    void testOnClass(){
         URL url = URL.valueOf("test://localhost/test");
         ExtensionLoader<ActivateExt1> loader = ExtensionLoader.getExtensionLoader(ActivateExt1.class);
         List<ActivateExt1> list = loader.getActivateExtension(url, new String[] {}, "onClass");

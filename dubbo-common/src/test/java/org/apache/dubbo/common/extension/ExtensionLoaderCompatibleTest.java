@@ -26,10 +26,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class ExtensionLoader_Compatible_Test {
+class ExtensionLoaderCompatibleTest {
 
     @Test
-    void test_getExtension() {
+    void testGetExtension() {
 
         ModuleModel moduleModel = ApplicationModel.defaultModel().getDefaultModule();
 

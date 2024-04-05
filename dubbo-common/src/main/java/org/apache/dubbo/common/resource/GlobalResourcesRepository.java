@@ -74,15 +74,7 @@ public class GlobalResourcesRepository {
         }
     }
 
-    public void removeGlobalDisposable(Disposable disposable) {
-        if (globalReusedDisposables.contains(disposable)) {
-            synchronized (GlobalResourcesRepository.class) {
-                if (globalReusedDisposables.contains(disposable)) {
-                    this.globalReusedDisposables.remove(disposable);
-                }
-            }
-        }
-    }
+
 
     public static ExecutorService getGlobalExecutorService() {
         return getInstance().getExecutorService();
@@ -156,16 +148,6 @@ public class GlobalResourcesRepository {
             synchronized (this) {
                 if (!oneoffDisposables.contains(disposable)) {
                     oneoffDisposables.add(disposable);
-                }
-            }
-        }
-    }
-
-    public void removeDisposable(Disposable disposable) {
-        if (oneoffDisposables.contains(disposable)) {
-            synchronized (this) {
-                if (oneoffDisposables.contains(disposable)) {
-                    oneoffDisposables.remove(disposable);
                 }
             }
         }

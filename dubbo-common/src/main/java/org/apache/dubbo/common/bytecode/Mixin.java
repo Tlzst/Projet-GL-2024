@@ -147,10 +147,13 @@ public abstract class Mixin {
                     }
                     worked.add(desc);
 
-                    int ix = findMethod(dcs, desc);
-                    if (ix < 0) {
-                        throw new RuntimeException("Missing method [" + desc + "] implement.");
+                    int ix;
+                    try{
+                        ix = findMethod(dcs, desc);
+                    } catch (NoSuchMethodException e){
+                        break;
                     }
+
 
                     Class<?> rt = method.getReturnType();
                     String mn = method.getName();
@@ -208,7 +211,7 @@ public abstract class Mixin {
         }
     }
 
-    private static int findMethod(Class<?>[] dcs, String desc) {
+    private static int findMethod(Class<?>[] dcs, String desc) throws NoSuchMethodException {
         Class<?> cl;
         Method[] methods;
         for (int i = 0; i < dcs.length; i++) {
@@ -220,7 +223,7 @@ public abstract class Mixin {
                 }
             }
         }
-        return -1;
+        throw new NoSuchMethodException("Missing method [" + desc + "] implement.");
     }
 
     private static void assertInterfaceArray(Class<?>[] ics) {
